@@ -5,7 +5,7 @@
     {
       "name": "asbuilt-docs",
       "source": "./plugins/asbuilt-docs",
-      "description": "実装の根拠をたどれる日本語の開発資料を作成・更新する"
+      "description": "開発者が動作を再現でき、承認者が仕様への適合を確かめられる日本語の開発資料を復元する"
     }
   ]
 }

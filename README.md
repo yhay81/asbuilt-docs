@@ -1,6 +1,6 @@
 # Asbuilt Docs
 
-完成したソフトウェアを基に、案件に必要な日本語の開発資料を選ぶCodex／Claude Codeプラグインです。要件定義書・テスト仕様書・テスト結果報告書を別々のMarkdownとして生成し、要件・実装・試験・承認の根拠をたどれます。
+完成したソフトウェアから、日本の開発工程で使う一貫した資料一式を復元するCodex／Claude Codeプラグインです。開発者が資料だけで同じ動きを作り直せること、承認者が合意した仕様と対象版の実測を照合できることを目指しています。
 
 ## インストール
 
@@ -18,11 +18,13 @@ claude plugin marketplace add yhay81/asbuilt-docs
 claude plugin install asbuilt-docs@asbuilt-market
 ```
 
-新しいセッションでCodexはAsbuilt Docsを選択し、Claude Codeは `/asbuilt-docs:reconstruct` で呼び出します。調べたいソフトウェアの作業フォルダーで、たとえば次のように依頼してください。
+新しいセッションでCodexはAsbuilt Docsを選択し、Claude Codeは `/asbuilt-docs:reconstruct` で呼び出します。調べたいソフトウェアの作業フォルダーで依頼します。
 
-> CSV一括登録を引き継ぎます。正常な9行と入力エラーの1行を渡すと何が起こりますか。現行仕様、業務側に確認すること、受入テスト案をそれぞれ根拠付きでMarkdownにしてください。
+> このソフトウェアの開発資料一式を復元してください。
 
-> このソフトウェアを運用部門に引き継ぎます。必要な成果物を選び、要件定義書、テスト仕様書、テスト結果報告書と運用手順書を作ってください。実施状況や承認が分からない箇所は記入欄として残してください。
+開発者は要件・設計・試験仕様をたどり、入力、操作の順番、正常時と異常時の結果を確認できます。承認者は各要求について、合意した受入条件、対象版で実施した試験、その観測結果を照合します。承認済みの仕様や実行記録が手元にあれば、対象ソフトウェアと一緒に渡してください。資料で確認できた現行動作、仕様との食い違い、人の判断が必要な事項を記録します。
+
+再実装の基準は、同じ入力・操作で、利用者や連携先から見える結果が一致することです。実装言語や内部のデータ構造は選べます。仕様と結果の対応を確かめる際は、IPAの要求管理とデジタル庁の受入テストの考え方を参考にしています。[IPA「AI時代の要求管理ハンドブック」第11章](https://www.ipa.go.jp/digital/kaihatsu/rqr7mi000000f5up-att/req-mgmt-hb.pdf#page=96) ／ [デジタル庁 DS-120 第3編第7章](https://www.digital.go.jp/assets/contents/node/basic_page/field_ref_resources/e2a06143-ed29-4f1d-9c31-0f06fca67afc/0af5ce68/20260715_resources_standard_guidelines_guideline_05.pdf#page=358)
 
 ## 手元でサンプルを試す
 

@@ -31,3 +31,7 @@
 たとえば試験結果が手元にないときは、期待値と実施手順を記入し、実測値と判定を空欄にする。「対象版でERR-DISPLAYを実行した記録はどれか」を品質担当に確認する項目として結ぶ。人が回答したら、回答の対象版・日付・根拠を台帳に加え、関係する資料を更新する。
 
 工程と役割にはIPAの共通フレーム2013、聞き取りと要求・実装・試験の関係には要求管理ハンドブックを参照する。[共通フレーム2013](https://www.ipa.go.jp/publish/secbooks20130304.html) ／ [AI時代の要求管理ハンドブック](https://www.ipa.go.jp/digital/kaihatsu/youkyu-kanri.html)
+
+独立した開発者が再現する範囲には、利用者の操作、画面・帳票の内容、バッチや外部連携の結果、例外時の動きなど、対象製品で観察できるものを含める。応答時間や復旧時間が合意されていれば、条件と測定結果を記す。[IPA 機能要件の合意形成ガイド](https://www.ipa.go.jp/archive/digital/iot-en-ci/jyouryuu/ent03-a.html) ／ [IPA 非機能要求グレード2018](https://www.ipa.go.jp/archive/digital/iot-en-ci/jyouryuu/hikinou/ent03-b.html)
+
+承認者には、どの業務条件をどの試験で確かめ、どこまで仕様と一致したかを示す。合意前の仕様は候補として残す。合意した条件と実際の試験条件を、元の要求と原票までたどれる形にする。[IPA 要求管理ハンドブック第11章](https://www.ipa.go.jp/digital/kaihatsu/rqr7mi000000f5up-att/req-mgmt-hb.pdf#page=96) ／ [デジタル庁 DS-120・期待結果](https://www.digital.go.jp/assets/contents/node/basic_page/field_ref_resources/e2a06143-ed29-4f1d-9c31-0f06fca67afc/0af5ce68/20260715_resources_standard_guidelines_guideline_05.pdf#page=344) ／ [同・受入テスト](https://www.digital.go.jp/assets/contents/node/basic_page/field_ref_resources/e2a06143-ed29-4f1d-9c31-0f06fca67afc/0af5ce68/20260715_resources_standard_guidelines_guideline_05.pdf#page=358)
