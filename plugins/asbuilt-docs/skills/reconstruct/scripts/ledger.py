@@ -60,16 +60,36 @@ def path_within(root, relative):
     return real
 
 
+def range_digests(root, name, spans):
+    """Read one source forward, even when many records quote overlapping ranges."""
+    starts = defaultdict(list)
+    for start, end in spans:
+        require(1 <= start <= end, f"行範囲を確認してください: {name} {start}–{end}")
+        starts[start].append((start, end))
+    active, result = {}, {}
+    last = max(end for _, end in spans)
+    with path_within(root, name).open(encoding="utf-8-sig") as source:
+        lines = (line for physical in source for line in physical.splitlines())
+        for number, line in enumerate(lines, 1):
+            for span in starts.get(number, ()):
+                active[span] = hashlib.sha256()
+            if active:
+                data = (line + "\n").encode()
+                for span, hasher in list(active.items()):
+                    hasher.update(data)
+                    if span[1] == number:
+                        result[span] = hasher.hexdigest()
+                        del active[span]
+            if number == last:
+                break
+    missing = spans - result.keys()
+    require(not missing, f"行範囲を確認してください: {name} {sorted(missing)}")
+    return result
+
+
 def digest(root, evidence):
-    path = path_within(root, evidence["path"])
-    lines = path.read_text(encoding="utf-8-sig").splitlines()
-    start, end = evidence["start"], evidence["end"]
-    require(
-        1 <= start <= end <= len(lines),
-        f"行範囲を確認してください: {evidence['path']} {start}–{end}",
-    )
-    excerpt = "\n".join(lines[start - 1 : end]) + "\n"
-    return hashlib.sha256(excerpt.encode()).hexdigest()
+    span = (evidence["start"], evidence["end"])
+    return range_digests(root, evidence["path"], {span})[span]
 
 
 def check_evidence(evidence, root):
@@ -129,6 +149,7 @@ def verify_ledger(doc, root=None, *, comparing_versions=False):
     rows = doc.get("records")
     require(isinstance(rows, list), "records 配列が必要です")
     index = {}
+    sources = defaultdict(dict)
     for row in rows:
         require(isinstance(row, dict), "各項目にはオブジェクトが必要です")
         key, kind, state = (string(row, f) for f in ("id", "type", "status"))
@@ -154,7 +175,11 @@ def verify_ledger(doc, root=None, *, comparing_versions=False):
             f"{key}: 自己参照または重複する関連項目です",
         )
         for ref in refs:
-            check_evidence(ref, root)
+            check_evidence(ref, None)
+            if root is not None:
+                span = (ref["start"], ref["end"])
+                expected = sources[ref["path"]].setdefault(span, ref["sha256"])
+                require(expected == ref["sha256"], f"{key}: 同じ引用の指紋が異なります")
         if kind == "test":
             test_id = string(row, "test_id") if "test_id" in row else key
             for ref in refs:
@@ -195,8 +220,15 @@ def verify_ledger(doc, root=None, *, comparing_versions=False):
             )
         index[key] = row
     for key, row in index.items():
-        missing = set(row.get("depends_on", [])) - index.keys()
+        missing = [key for key in row.get("depends_on", []) if key not in index]
         require(not missing, f"{key}: 参照先がありません: {', '.join(sorted(missing))}")
+    for name, expected in sources.items():
+        actual = range_digests(root, name, set(expected))
+        for span, wanted in expected.items():
+            require(
+                actual[span] == wanted,
+                f"根拠が変わりました: {name}:{span[0]}-{span[1]}",
+            )
     return index
 
 

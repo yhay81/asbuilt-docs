@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "asbuilt-docs",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "実装の根拠をたどれる日本語の開発資料を作成・更新する",
   "author": {"name": "yhay81"},
   "repository": "https://github.com/yhay81/asbuilt-docs"

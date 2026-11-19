@@ -1,0 +1,7 @@
+{
+  "title": "CSV一括登録",
+  "revision": "csv-example-v1",
+  "purpose": "取込時の入力エラーの扱いを引き継ぐ。",
+  "only": ["requirements", "test-spec", "test-report"],
+  "modules": [{"id": "import", "name": "一括取込", "ledger": "ledger.json"}]
+}
