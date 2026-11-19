@@ -1,15 +1,14 @@
 """Validate, render and compare an evidence-linked requirements ledger (Python 3.9+)."""
 
 import argparse
-from collections import defaultdict, deque
-from datetime import date
 import hashlib
 import json
-from pathlib import Path
 import re
 import sys
+from collections import defaultdict, deque
+from datetime import date
+from pathlib import Path
 from urllib.parse import quote
-
 
 STATES = {
     "behavior": {"observed"},
@@ -93,6 +92,8 @@ def check_evidence(evidence, root):
         date.fromisoformat(string(evidence, "date"))
     elif kind == "run":
         string(evidence, "revision")
+        if "test_id" in evidence:
+            string(evidence, "test_id")
         require(
             evidence.get("result") in ("passed", "failed"), "試験記録に合否が必要です"
         )
@@ -103,12 +104,19 @@ def check_evidence(evidence, root):
         )
 
 
+def unlinked_result(row, revision):
+    return row["status"] in {"passed", "failed"} and not any(
+        ref["kind"] == "run" and ref["revision"] == revision and ref.get("test_id")
+        for ref in row.get("evidence", [])
+    )
+
+
 def verify_ledger(doc, root=None, *, comparing_versions=False):
     require(
         isinstance(doc, dict)
         and type(doc.get("schema_version")) is int
-        and doc["schema_version"] == 1,
-        "台帳形式は1を指定してください",
+        and doc["schema_version"] in (1, 2),
+        "台帳形式には整数の1または2を指定してください",
     )
     revision = string(doc, "revision")
     if "repository" in doc:
@@ -147,6 +155,16 @@ def verify_ledger(doc, root=None, *, comparing_versions=False):
         )
         for ref in refs:
             check_evidence(ref, root)
+        if kind == "test":
+            test_id = string(row, "test_id") if "test_id" in row else key
+            for ref in refs:
+                if ref["kind"] != "run":
+                    continue
+                if doc["schema_version"] == 2 or "test_id" in ref:
+                    require(
+                        ref.get("test_id") == test_id,
+                        f"{key}: 実行記録の試験IDが {test_id} と一致する必要があります",
+                    )
         kinds = {ref["kind"] for ref in refs}
         if kind == "behavior":
             require(
@@ -209,7 +227,12 @@ def impact(old, new, root):
         for key, row in index.items():
             for dependency in row.get("depends_on", []):
                 reverse[dependency].add(key)
-    affected = changed | stale | previous_runs
+    unlinked = {
+        key
+        for key, row in current.items()
+        if key not in previous_runs and unlinked_result(row, new["revision"])
+    }
+    affected = changed | stale | previous_runs | unlinked
     pending = deque(sorted(affected))
     while pending:
         for key in reverse[pending.popleft()]:
@@ -226,6 +249,7 @@ def impact(old, new, root):
         "changed": sorted(changed),
         "stale_evidence": sorted(stale),
         "prior_revision_tests": sorted(previous_runs),
+        "unlinked_test_results": sorted(unlinked),
         "affected": sorted(affected),
         "sections": sorted(impacted_areas),
     }
@@ -241,9 +265,10 @@ def render(doc, section):
         if not selected:
             lines.extend(["記録なし（該当の有無は要確認）。", ""])
         for row in selected:
-            lines.extend(
-                [f"### {row['id']}　{LABELS[row['status']]}", "", row["text"], ""]
-            )
+            label = LABELS[row["status"]]
+            if unlinked_result(row, doc["revision"]):
+                label += "（試験IDは要確認）"
+            lines.extend([f"### {row['id']}　{label}", "", row["text"], ""])
             if row.get("owner"):
                 lines.append(f"- 確認先　{row['owner']}")
             if row.get("depends_on"):
@@ -262,12 +287,16 @@ def render(doc, section):
                 )
                 if ref["kind"] == "run":
                     details = f"　{ref['revision']} {ref['result']}"
+                    if ref.get("test_id"):
+                        details += f"　試験ID {ref['test_id']}"
                 lines.append(f"- 根拠　{name}（{ref['kind']}）{details}")
             lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
 
 def load(path):
+    if path == Path("-"):
+        return json.load(sys.stdin)
     return json.loads(path.read_text(encoding="utf-8"))
 
 
@@ -281,6 +310,7 @@ def main():
     cite.add_argument("--kind", choices=KINDS, required=True)
     for field in ("by", "date", "revision", "result"):
         cite.add_argument("--" + field)
+    cite.add_argument("--test-id")
     for name in ("check", "render"):
         cmd = sub.add_parser(name)
         cmd.add_argument("ledger", type=Path)
@@ -316,6 +346,13 @@ def main():
             rows = verify_ledger(doc, a.root)
             if a.command == "check":
                 print(f"{len(rows)} 項目の形式と根拠の参照を確認しました")
+                pending = [
+                    key
+                    for key, row in rows.items()
+                    if unlinked_result(row, doc["revision"])
+                ]
+                if pending:
+                    print("試験IDの照合待ち　" + "、".join(pending))
             else:
                 print(render(doc, a.section), end="")
     except (OSError, ValueError, TypeError) as exc:

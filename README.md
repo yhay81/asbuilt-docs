@@ -30,6 +30,6 @@ claude plugin install asbuilt-docs@asbuilt-market
 python3 plugins/asbuilt-docs/skills/reconstruct/scripts/ledger.py render examples/csv/ledger.json --root examples/csv
 ```
 
-初版はMarkdownの出力、根拠の照合、旧版との差分確認に対応しています。顧客の指定書式があれば、必要な項目を照らし合わせて使えます。[台帳の形式とコマンド](plugins/asbuilt-docs/skills/reconstruct/references/ledger.md)
+Markdownの出力、根拠の照合、旧版との差分確認に対応しています。バージョン0.2.0では、合否を記載する際に対象版と試験IDの両方を照合します。資料一式を作るときは、企画から運用・廃棄までの確認欄を顧客の指定書式に合わせて選べます。[台帳の形式とコマンド](plugins/asbuilt-docs/skills/reconstruct/references/ledger.md) ／ [工程ごとの資料と確認欄](plugins/asbuilt-docs/skills/reconstruct/references/deliverables.md)
 
 共通パッケージはAgent Plugins 1.0.0、共有する手順はAgent Skills形式です。CodexとClaude Codeが同じスキルを読み込みます。[Agent Pluginsの公開仕様](https://github.com/agentplugins/agent-plugins-spec/blob/v1.0.0/spec/1.0.0.md) ／ [Agent Skills](https://agentskills.io/specification)
