@@ -12,6 +12,7 @@ import tempfile
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from delivery_links import check_delivery
 from document_views import (
     ACTIVITIES,
     CATALOG,
@@ -359,10 +360,17 @@ def main():
     inv.add_argument("--root", type=Path, default=Path.cwd())
     inv.add_argument("--revision", default="HEAD")
     inv.add_argument("--depth", type=int, default=2)
+    check = sub.add_parser(
+        "check-delivery", help="納品したMarkdownからローカルの参照先を開けるか調べる"
+    )
+    check.add_argument("directory", type=Path)
     args = parser.parse_args()
     try:
         if args.command == "inventory":
             inventory(args.root, args.revision, args.depth)
+        elif args.command == "check-delivery":
+            files, links = check_delivery(args.directory)
+            print(f"{files}資料のローカル参照{links}件を納品先の中で確認しました")
         elif args.command == "plan":
             build(args.project, None, None, args.module, plan_only=True)
         else:
