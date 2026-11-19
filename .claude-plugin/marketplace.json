@@ -1,0 +1,11 @@
+{
+  "name": "asbuilt-market",
+  "owner": {"name": "yhay81"},
+  "plugins": [
+    {
+      "name": "asbuilt-docs",
+      "source": "./plugins/asbuilt-docs",
+      "description": "実装の根拠をたどれる日本語の開発資料を作成・更新する"
+    }
+  ]
+}

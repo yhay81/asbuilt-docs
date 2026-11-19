@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "revision": "csv-example-v1",
+  "records": [
+    {
+      "id": "F-01",
+      "type": "behavior",
+      "status": "observed",
+      "text": "IDが空の行があれば保存処理を呼ばず0件を返す。",
+      "evidence": [
+        {
+          "path": "import_rows.py",
+          "start": 3,
+          "end": 5,
+          "kind": "code",
+          "sha256": "ad541279f6befba8090bc58c4882d4eaee3461da1618f973b6182080d27eec39"
+        }
+      ]
+    },
+    {
+      "id": "R-01",
+      "type": "requirement",
+      "status": "proposed",
+      "text": "エラー時の全件差し戻しを業務ルールの候補とする。",
+      "depends_on": [
+        "F-01"
+      ]
+    },
+    {
+      "id": "T-01",
+      "type": "test",
+      "status": "planned",
+      "text": "正常9行とIDが空の1行を取り込み、新規登録が0件であることを確かめる。実行結果は確認待ち。",
+      "depends_on": [
+        "R-01",
+        "F-01"
+      ]
+    },
+    {
+      "id": "Q-01",
+      "type": "question",
+      "status": "open",
+      "text": "締め日でも、全行が修正されるまで処理を待てますか。",
+      "owner": "取込業務の責任者",
+      "depends_on": [
+        "R-01"
+      ]
+    }
+  ]
+}

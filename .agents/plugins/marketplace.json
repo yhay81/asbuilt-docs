@@ -1,0 +1,11 @@
+{
+  "name": "asbuilt-market",
+  "plugins": [
+    {
+      "name": "asbuilt-docs",
+      "source": {"source": "local", "path": "./plugins/asbuilt-docs"},
+      "policy": {"installation": "AVAILABLE", "authentication": "ON_INSTALL"},
+      "category": "Productivity"
+    }
+  ]
+}
