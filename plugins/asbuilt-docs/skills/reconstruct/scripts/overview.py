@@ -1,13 +1,14 @@
 """Build the evidence-backed product introduction, architectural views and UI plates."""
 
 import hashlib
-import re
+import json
 import shutil
 from itertools import islice
 
 from diagrams import render_svg
 from document_views import table
 from ledger import ID, load, path_within, require, string
+from screen_assets import CAPTURES, verify_image
 
 KINDS = {
     "infrastructure": "インフラ構成図",
@@ -110,6 +111,10 @@ def draw_view(view, entities, assets, index, sources):
     require(
         nodes or note, f"{title} の構成が未確認なら調査範囲と確認先を記載してください"
     )
+    require(
+        category != "data" or edges or note,
+        "データの流れには受渡しの矢印または調査待ちの理由が必要です",
+    )
     if not nodes:
         nodes = {"unknown": "未確認\n" + note}
     filename = f"{category}-{index:02}.svg"
@@ -139,8 +144,6 @@ def copy_capture(screen, root, assets, index, revision):
         string(screen, "revision") == revision,
         "スクリーンショットの版が案件と一致しません",
     )
-    expected = string(screen, "sha256")
-    require(re.fullmatch(r"[0-9a-f]{64}", expected), "撮影原本のSHA-256が必要です")
     source = path_within(root, string(screen, "file"))
     ext = source.suffix.lower()
     require(
@@ -148,24 +151,7 @@ def copy_capture(screen, root, assets, index, revision):
     )
     target = assets / f"screen-{index:02}{ext}"
     shutil.copyfile(source, target)
-    digest = hashlib.sha256()
-    with target.open("rb") as stream:
-        header = stream.read(24)
-        if ext == ".png":
-            valid = (
-                header.startswith(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR")
-                and len(header) == 24
-                and all(int.from_bytes(header[i : i + 4], "big") for i in (16, 20))
-            )
-        else:
-            valid = header.startswith(b"\xff\xd8\xff")
-        require(valid, f"画像の形式を読み取れません: {source.name}")
-        digest.update(header)
-        for block in iter(lambda: stream.read(1 << 20), b""):
-            digest.update(block)
-    require(
-        digest.hexdigest() == expected, f"撮影原本と画像が一致しません: {source.name}"
-    )
+    verify_image(target, string(screen, "sha256"))
     return "figures/" + target.name
 
 
@@ -186,11 +172,13 @@ def screens_section(ui, actors, root, assets, revision):
         }[kind]
         return [*result, f"{label}　{reason}", ""]
     require(kind == "gui", "画面の種別と撮影原本が矛盾しています")
+    images = {}
     for idx, screen in enumerate(captures, 1):
         mapping(screen, "capture")
         actor = string(screen, "actor")
         require(actor in actors, f"画面の利用者が未定義です: {actor}")
         src = copy_capture(screen, root, assets, idx, revision)
+        images[src.rsplit("/", 1)[1]] = screen["sha256"]
         title = string(screen, "title")
         result.extend(
             [
@@ -206,6 +194,14 @@ def screens_section(ui, actors, root, assets, revision):
                 "",
             ]
         )
+    (assets / CAPTURES).write_text(
+        json.dumps(
+            {"revision": revision, "images": images}, ensure_ascii=False, indent=2
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    result.extend([f"[撮影原本の照合記録](figures/{CAPTURES})", ""])
     if "reason" in ui:
         result.extend(["追加の採取待ち　" + string(ui, "reason"), ""])
     return result

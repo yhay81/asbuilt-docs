@@ -4,6 +4,8 @@ import re
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
+from screen_assets import verify_captures
+
 LINK_START = re.compile(r"\]\(\s*|^ {0,3}\[[^\]]+\]:[ \t]*")
 INLINE_CODE = re.compile(r"(?<!`)(`+)(?!`).*?(?<!`)\1(?!`)")
 FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})")
@@ -101,4 +103,5 @@ def check_delivery(directory):
             f"納品資料から開けないローカル参照が{missing}件あります。\n"
             + "\n".join(errors)
         )
+    verify_captures(root)
     return files, links
