@@ -265,9 +265,27 @@ def render_overview(config, root, stage, revision):
         {string(v, "kind") for v in views} == set(KINDS),
         "インフラ・ソフトウェア・データフローの3種類の図が必要です",
     )
+    scope_type = doc.get("scope_type", "product")
+    require(
+        scope_type in ("product", "subsystem"), "概要の scope_type を確認してください"
+    )
+    software = [view for view in views if view["kind"] == "software"]
+    for view in software:
+        require(
+            view.get("level") in (None, "product", "detail"),
+            "ソフトウェア図の level を確認してください",
+        )
+    if scope_type == "subsystem":
+        require(
+            {"product", "detail"}.issubset(view.get("level") for view in software),
+            "部分業務の概要には、製品全体と対象業務を示す2種類のソフトウェア図が必要です",
+        )
     for kind, title in KINDS.items():
         lines.extend([f'<a id="view-{kind}"></a>', "", f"## {title}", ""])
-        for idx, view in enumerate((v for v in views if v["kind"] == kind), 1):
+        group = [v for v in views if v["kind"] == kind]
+        if kind == "software":
+            group.sort(key=lambda v: v.get("level") != "product")
+        for idx, view in enumerate(group, 1):
             lines.extend(draw_view(view, names, assets, idx, sources))
     lines.extend(
         screens_section(mapping(doc.get("ui"), "ui"), actors, root, assets, revision)
