@@ -457,7 +457,7 @@ class Module:
         )
         return lines
 
-    def render(self, key, project, module, cross_links, chosen):
+    def render(self, key, project, module, cross_links, chosen, overview_link=None):
         lines = [
             f"# {CATALOG[key][0]}",
             "",
@@ -466,6 +466,8 @@ class Module:
             f"範囲　{module['name']}（{module['id']}）",
             "",
         ]
+        if overview_link:
+            lines.extend([f"[製品の目的・関係者・構成図・画面]({overview_link})", ""])
         for field, label in (("purpose", "目的"), ("scope", "対象範囲")):
             if field in project:
                 lines += [f"{label}　{project[field]}", ""]

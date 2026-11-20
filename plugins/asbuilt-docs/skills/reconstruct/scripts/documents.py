@@ -23,6 +23,7 @@ from document_views import (
     validate_fields,
 )
 from ledger import ID, load, path_within, require, string, verify_ledger
+from overview import render_overview
 
 
 def choices(project, key, allowed):
@@ -81,6 +82,8 @@ def read_project(path):
     for key in ("scope", "purpose"):
         if key in project:
             string(project, key)
+    if "overview" in project:
+        path_within(path.parent, string(project, "overview"))
     require(
         isinstance(project.get("modules"), list) and project["modules"],
         "modules を1件以上指定してください",
@@ -131,9 +134,11 @@ def coverage(project, modules, chosen):
     ]
 
 
-def catalog_text(project, modules, chosen, selected, reasons, record_counts=None):
+def catalog_text(
+    project, modules, chosen, selected, reasons, record_counts=None, introduction=()
+):
     built = record_counts is not None
-    lines = ["# 成果物一覧", "", *coverage(project, modules, chosen)]
+    lines = ["# 成果物一覧", "", *introduction, *coverage(project, modules, chosen)]
     if "purpose" in project:
         lines.extend(["目的　" + project["purpose"], ""])
     if "scope" in project:
@@ -230,6 +235,43 @@ def build(path, root, target, requested, plan_only=False):
     with tempfile.TemporaryDirectory(prefix=".asbuilt-", dir=target.parent) as tmp:
         stage = Path(tmp) / "snapshot"
         stage.mkdir()
+        introduction = []
+        overview_link = None
+        if "overview" in project:
+            if len(chosen) == len(modules):
+                intro, overview = render_overview(
+                    path_within(path.parent, project["overview"]),
+                    root,
+                    stage,
+                    project["revision"],
+                )
+                if "only" in project:
+                    introduction = overview
+                    overview_link = "成果物一覧.md#system"
+                else:
+                    overview_link = "システム概要.md"
+                    introduction = [
+                        *intro,
+                        f"[関係者・構成図・画面を読む]({overview_link})",
+                        "",
+                    ]
+                    (stage / overview_link).write_text(
+                        "\n".join(
+                            [
+                                "# システム概要",
+                                "",
+                                *overview,
+                                "[開発資料の一覧](成果物一覧.md)",
+                                "",
+                            ]
+                        ),
+                        encoding="utf-8",
+                    )
+            else:
+                introduction = [
+                    "この納品は選択した機能の資料です。製品全体の構成図と画面は全体版に収録します。",
+                    "",
+                ]
         totals = Counter()
         counts = {}
         record_counts = {}
@@ -259,7 +301,16 @@ def build(path, root, target, requested, plan_only=False):
                     dest = stage / document_path(mod, key, split)
                     dest.parent.mkdir(parents=True, exist_ok=True)
                     dest.write_text(
-                        data.render(key, project, cfg, links[mod], chosen),
+                        data.render(
+                            key,
+                            project,
+                            cfg,
+                            links[mod],
+                            chosen,
+                            ("../../" if split else "") + overview_link
+                            if overview_link
+                            else None,
+                        ),
                         encoding="utf-8",
                     )
                 del data, doc, index
@@ -269,6 +320,10 @@ def build(path, root, target, requested, plan_only=False):
             for key in selected:
                 title = CATALOG[key][0]
                 lines = ["# " + title, "", *coverage(project, modules, chosen)]
+                if overview_link:
+                    lines.extend(
+                        [f"[製品の目的・関係者・構成図・画面]({overview_link})", ""]
+                    )
                 if key == "test-report":
                     lines += [
                         "## 収録範囲のケース集計",
@@ -291,7 +346,9 @@ def build(path, root, target, requested, plan_only=False):
                     "\n".join(lines) + "\n", encoding="utf-8"
                 )
         (stage / "成果物一覧.md").write_text(
-            catalog_text(project, modules, chosen, selected, reasons, record_counts),
+            catalog_text(
+                project, modules, chosen, selected, reasons, record_counts, introduction
+            ),
             encoding="utf-8",
         )
         publish(stage, target)

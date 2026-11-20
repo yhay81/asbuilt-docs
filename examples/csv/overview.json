@@ -1,0 +1,27 @@
+{
+  "revision": "csv-example-v1",
+  "product": "行の集まりを受け取り、すべての行にIDがある場合にまとめて保存処理に渡すPythonライブラリです。",
+  "purpose": "取込担当がIDの抜けを修正し、一括登録する表をそろえます。",
+  "scope": "呼出元から受け取った行の検査と、保存関数への引渡し。保存方式と稼働環境は呼出元に確認します。",
+  "sources": {
+    "guide": {"path":"使用条件.md","start":3,"end":5},
+    "code": {"path":"import_rows.py","start":1,"end":5}
+  },
+  "evidence":["guide","code"],
+  "stakeholders":[
+    {"id":"operator","name":"取込担当","role":"欠けたIDを直して表を再投入する。","goal":"集計に使う行をそろえる。","evidence":["guide"]},
+    {"id":"developer","name":"呼出元の開発者","role":"行の配列と保存関数を渡す。","goal":"処理結果を呼出元で扱う。","evidence":["guide","code"]}
+  ],
+  "components":[
+    {"id":"runtime","name":"Python実行環境","role":"取込関数と呼出元から渡された関数を実行する。","evidence":["guide","code"]},
+    {"id":"caller","name":"呼出元","role":"複数行と保存先の関数を用意し、戻り値を受ける。","evidence":["guide","code"]},
+    {"id":"validate","name":"一括登録関数","role":"IDの有無を全行で確認し、不足があれば0を返す。","evidence":["code"]},
+    {"id":"save","name":"保存関数","role":"すべての行を受け取り、呼出元が定めた保存結果を返す。","evidence":["code","guide"]}
+  ],
+  "views":[
+    {"kind":"infrastructure","title":"呼出元の実行境界","scope":"コードから確認できる実行単位。実際のホストと永続化先は呼出元に確認する。","nodes":["runtime"],"groups":{"呼出元が用意する環境":["runtime"]},"evidence":["guide","code"]},
+    {"kind":"software","title":"取込処理の呼出関係","scope":"呼出元とライブラリが受け持つ処理。","edges":[{"from":"caller","to":"validate","label":"行と保存関数を渡す"},{"from":"validate","to":"save","label":"ID検査を通った全行を渡す"}],"evidence":["code"]},
+    {"kind":"data","title":"表の行と処理結果","scope":"取込担当から受け取った表の処理。","edges":[{"from":"operator","to":"caller","label":"登録する表"},{"from":"caller","to":"validate","label":"登録予定の行"},{"from":"validate","to":"caller","label":"ID欠落時に0件"},{"from":"validate","to":"save","label":"全行のIDがあれば行全体"},{"from":"save","to":"caller","label":"取込関数を経由して保存結果"}],"evidence":["guide","code"]}
+  ],
+  "ui":{"kind":"none","reason":"この例の公開インターフェースはPython関数である。"}
+}
